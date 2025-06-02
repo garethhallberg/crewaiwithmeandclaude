@@ -1,0 +1,117 @@
+```swift
+// FILE: NetworkManagerTests.swift
+import XCTest
+@testable import TwitterClone
+
+final class NetworkManagerTests: XCTestCase {
+    var networkManager: NetworkManager!
+    var mockURLSession: MockURLSession!
+    
+    override func setUp() {
+        super.setUp()
+        mockURLSession = MockURLSession()
+        networkManager = NetworkManager(session: mockURLSession)
+    }
+    
+    override func tearDown() {
+        mockURLSession = nil
+        networkManager = nil
+        super.tearDown()
+    }
+    
+    func testSuccessfulAPIRequest() async {
+        // Arrange
+        let expectedData = "{\"key\":\"value\"}".data(using: .utf8)!
+        mockURLSession.nextData = expectedData
+        mockURLSession.nextError = nil
+        mockURLSession.nextURLResponse = MockResponseBuilder.successResponse(withData: expectedData)
+        
+        let request = URLRequest(url: URL(string: "https://twitterclone.com/success")!)
+        
+        // Act
+        do {
+            let (data, response) = try await networkManager.perform(request: request)
+            
+            // Assert
+            XCTAssertNotNil(data, "Expected data not found")
+            XCTAssertTrue(response is HTTPURLResponse, "Expected HTTPURLResponse type")
+            
+            let httpResponse = response as! HTTPURLResponse
+            XCTAssertEqual(httpResponse.statusCode, 200, "HTTP Status Code is not 200")
+        } catch {
+            XCTFail("Expected successful API request, but failed with error: \(error)")
+        }
+    }
+    
+    func testNetworkFailure() async {
+        // Arrange
+        mockURLSession.nextError = NSError(domain: NSURLErrorDomain, code: NSURLErrorNotConnectedToInternet, userInfo: nil)
+        
+        let request = URLRequest(url: URL(string: "https://twitterclone.com/failure")!)
+        
+        // Act
+        do {
+            let _ = try await networkManager.perform(request: request)
+            XCTFail("Expected failure due to network error, but the request was successful")
+        } catch let error as NSError {
+            // Assert
+            XCTAssertEqual(error.domain, NSURLErrorDomain, "Error domain mismatch")
+            XCTAssertEqual(error.code, NSURLErrorNotConnectedToInternet, "Error code mismatch indicating not a network failure error")
+        }
+    }
+    
+    func testHTTPErrorStatuses() async {
+        // Arrange
+        let errorStatuses = [400, 401, 403, 404, 500]
+        
+        for statusCode in errorStatuses {
+            mockURLSession.nextURLResponse = MockResponseBuilder.failureResponse(statusCode: statusCode)
+            
+            let request = URLRequest(url: URL(string: "https://twitterclone.com/testHTTPError")!)
+            
+            // Act
+            do {
+                let _ = try await networkManager.perform(request: request)
+                
+                // This should not succeed, if it does, fail the test.
+                XCTFail("Request with HTTP status code \(statusCode) succeeded when it should have failed.")
+            } catch {
+                // Assert
+                XCTAssertTrue(error is NetworkError, "Expected NetworkError but got \(type(of: error))")
+                
+                if case .httpStatusError(let status) = error as? NetworkError {
+                    XCTAssertEqual(status, statusCode, "Expected HTTP status \(statusCode), but got \(status)")
+                } else {
+                    XCTFail("Expected HTTP status error but received a different NetworkError")
+                }
+            }
+        }
+    }
+    
+    func testInvalidURL() async {
+        // Arrange
+        let invalidURL = "This is not a URL"
+        let request = URLRequest(url: URL(string: invalidURL)!)
+        
+        // Act
+        do {
+            let _ = try await networkManager.perform(request: request)
+            
+            // This should not succeed, if it does, fail the test.
+            XCTFail("Request with invalid URL \(invalidURL) succeeded when it should have failed.")
+        } catch {
+            // Assert
+            XCTAssertTrue(error is NetworkError, "Expected NetworkError but got \(type(of: error))")
+            if case .invalidURL = error as? NetworkError {
+                // Expected outcome, no further assertions needed
+            } else {
+                XCTFail("Expected invalid URL error but received a different NetworkError")
+            }
+        }
+    }
+    
+    // Implement the remaining tests following the structure provided above.
+    // Each test case should conform to the same rigorous pattern of setting up the mock conditions (Arrange),
+    // performing the method call or action (Act), and asserting the results (Assert).
+}
+```

@@ -1,0 +1,116 @@
+SWIFT_FILE_START:TimelineView.swift
+```swift
+import SwiftUI
+
+struct TimelineView: View {
+    @StateObject private var viewModel = TimelineViewModel.createDefault()
+    
+    var body: some View {
+        NavigationView {
+            if viewModel.isLoading {
+                ProgressView("Loading timeline...")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                List(viewModel.posts, id: \.id) { post in
+                    PostRowView(post: post)
+                }
+                .navigationTitle("Timeline")
+                .refreshable {
+                    await viewModel.loadTimeline()
+                }
+            }
+        }
+        .alert("Error", isPresented: $viewModel.showError) {
+            Button("OK") {
+                viewModel.clearError()
+            }
+        } message: {
+            Text(viewModel.errorMessage)
+        }
+        .task {
+            await viewModel.loadTimeline()
+        }
+    }
+}
+
+struct TimelineView_Previews: PreviewProvider {
+    static var previews: some View {
+        TimelineView()
+    }
+}
+```
+SWIFT_FILE_END:TimelineView.swift
+
+SWIFT_FILE_START:PostRowView.swift
+```swift
+import SwiftUI
+
+struct PostRowView: View {
+    let post: Post
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(post.content)
+                .font(.body)
+                .multilineTextAlignment(.leading)
+            
+            HStack {
+                if let createdAt = post.createdAt {
+                    Text(createdAt, style: .relative)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                Text("♥ \(post.likeCount)")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+struct PostRowView_Previews: PreviewProvider {
+    static var previews: some View {
+        PostRowView(post: Post(
+            id: UUID(),
+            userId: UUID(),
+            content: "Sample post content",
+            likeCount: 5,
+            isDeleted: false,
+            createdAt: Date()
+        ))
+    }
+}
+```
+SWIFT_FILE_END:PostRowView.swift
+
+SWIFT_FILE_START:APIEndpoint.swift
+```swift
+import Foundation
+
+// Updated version of APIEndpoint
+enum APIEndpoint {
+    case getTimeline
+    case getPost(id: UUID)
+    case createPost(content: String)
+    // Added new case as requested
+    case deletePost(id: UUID)
+    
+    var url: URL {
+        switch self {
+        case .getTimeline:
+            return URL(string: "https://api.example.com/timeline")!
+        case .getPost(let id):
+            return URL(string: "https://api.example.com/posts/\(id)")!
+        case .createPost:
+            return URL(string: "https://api.example.com/posts/create")!
+        case .deletePost(let id):
+            return URL(string: "https://api.example.com/posts/delete/\(id)")!
+        }
+    }
+}
+```
+SWIFT_FILE_END:APIEndpoint.swift

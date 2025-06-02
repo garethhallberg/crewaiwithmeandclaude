@@ -1,0 +1,42 @@
+```swift
+import SwiftUI
+
+struct AuthenticatedView: View {
+    @State private var showTimeline = false
+
+    var body: some View {
+        NavigationView {
+            VStack {
+                // Other components that are part of AuthenticatedView
+                // Assuming there's a button to view timeline similar to how posts creation is handled
+                Button(action: {
+                    showTimeline = true
+                }) {
+                    Text("View Timeline")
+                        .padding()
+                        .foregroundColor(Color.white)
+                        .background(Color.blue)
+                        .cornerRadius(10)
+                }
+                .sheet(isPresented: $showTimeline) {
+                    TimelineView()
+                }
+            }
+            .navigationBarTitle("Home", displayMode: .inline)
+            .navigationBarItems(trailing: Button(action: {
+                // Assume logout functionality or similar action
+                print("Logging out...")
+            }) {
+                Text("Logout")
+            })
+        }
+    }
+}
+
+struct AuthenticatedView_Previews: PreviewProvider {
+    static var previews: some View {
+        AuthenticatedView()
+    }
+}
+```
+This implementation adds a state variable within `AuthenticatedView` for controlling the presentation of `TimelineView` and updates the action of a "View Timeline" button to show `TimelineView` using the `.sheet` modifier. This approach follows the existing navigation pattern used for the `PostCreationView`, aligning with the mission's simple integration requirements.

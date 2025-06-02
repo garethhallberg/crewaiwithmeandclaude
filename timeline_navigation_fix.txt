@@ -1,0 +1,35 @@
+```swift
+UPDATED_AUTHENTICATEDVIEW_START
+import SwiftUI
+
+struct AuthenticatedView: View {
+    @State private var showPostCreation = false
+    @State private var showTimeline = false // Added the state variable for showing TimelineView
+
+    var body: some View {
+        NavigationView {
+            VStack {
+                Button(action: {
+                    showPostCreation = true
+                }) {
+                    Text("Create Post")
+                }
+                .sheet(isPresented: $showPostCreation) {
+                    CreatePostView()
+                }
+
+                Button(action: {
+                    showTimeline = true // Fixed the button action to show TimelineView
+                }) {
+                    Text("View Timeline")
+                }
+                .sheet(isPresented: $showTimeline) {
+                    TimelineView() // Added the sheet to present TimelineView
+                }
+            }
+            .navigationBarTitle("Home", displayMode: .inline)
+        }
+    }
+}
+UPDATED_AUTHENTICATEDVIEW_END
+```

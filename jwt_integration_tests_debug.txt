@@ -1,0 +1,177 @@
+```swift
+// FILE: LoginViewModelJWTIntegrationTests.swift
+import XCTest
+@testable import TwitterClone
+
+@MainActor
+final class LoginViewModelJWTIntegrationTests: XCTestCase {
+    var viewModel: LoginViewModel!
+    var mockAuthManager: MockAuthManager!
+    var cancellables: Set<AnyCancellable>!
+
+    override func setUp() {
+        super.setUp()
+        mockAuthManager = MockAuthManager()
+        viewModel = LoginViewModel(authManager: mockAuthManager)
+        cancellables = []
+    }
+
+    override func tearDown() {
+        cancellables.removeAll()
+        mockAuthManager.reset()
+        super.tearDown()
+    }
+
+    func testAuthManagerDependencyInjection() {
+        XCTAssertNotNil(viewModel.authManager)
+        XCTAssertTrue(viewModel.authManager is MockAuthManager)
+    }
+
+    func testDefaultAuthManagerCreation() async {
+        let defaultViewModel = LoginViewModel()
+        XCTAssertNotNil(defaultViewModel.authManager, "AuthManager should be created if not injected")
+    }
+
+    func testMockAuthManagerInjection() {
+        XCTAssertTrue(viewModel.authManager === mockAuthManager, "Injected AuthManager should be used")
+    }
+
+    func testSuccessfulLoginCallsAuthManagerLogin() async {
+        mockAuthManager.shouldFailLogin = false
+        viewModel.username = "testUser"
+        viewModel.password = "testPassword"
+
+        await viewModel.login()
+
+        XCTAssertEqual(mockAuthManager.loginCallCount, 1)
+        XCTAssertEqual(mockAuthManager.lastLoginUser?.username, "testUser", "Username should match")
+    }
+
+    func testLoginPassesCorrectUserAndToken() async {
+        let testUser = User(username: "testUser", password: "testPassword")
+        let testToken = "testToken"
+        mockAuthManager.shouldFailLogin = false
+
+        await viewModel.login()
+
+        XCTAssertEqual(mockAuthManager.lastLoginToken, testToken, "Token should be passed correctly")
+        XCTAssertEqual(mockAuthManager.lastLoginUser, testUser, "User object should be passed correctly")
+    }
+
+    func testFailedLoginDoesNotCallAuthManager() async {
+        mockAuthManager.shouldFailLogin = true
+
+        await viewModel.login()
+
+        XCTAssertEqual(mockAuthManager.loginCallCount, 0, "Login should not be attempted on failure")
+    }
+
+    func testAuthManagerLoginWithValidCredentials() async {
+        let expectedUser = User(username: "validUser", password: "validPassword")
+        viewModel.username = expectedUser.username
+        viewModel.password = expectedUser.password
+        mockAuthManager.shouldFailLogin = false
+
+        await viewModel.login()
+
+        XCTAssertTrue(mockAuthManager.isAuthenticated, "User should be authenticated on valid credentials")
+        XCTAssertNotNil(mockAuthManager.currentUser, "Current user should be set on successful login")
+    }
+
+    func testAuthManagerStateSync() {
+        viewModel.authStateDidChange()
+
+        XCTAssertTrue(viewModel.isLoggedIn == mockAuthManager.isAuthenticated, "ViewModel login state should match AuthManager state")
+    }
+
+    func testInitialAuthStateSynchronization() {
+        mockAuthManager.isAuthenticated = true
+        viewModel = LoginViewModel(authManager: mockAuthManager)
+
+        XCTAssertTrue(viewModel.isLoggedIn, "Initial state should be synchronized with AuthManager isAuthenticated property")
+    }
+
+    func testAuthStateChangeTriggersViewModelUpdate() {
+        viewModel.authStateDidChange()
+        mockAuthManager.isAuthenticated.toggle()
+
+        XCTAssertTrue(viewModel.isLoggedIn != mockAuthManager.isAuthenticated, "ViewModel should update on AuthManager state change")
+    }
+
+    func testCombineSubscriptionHandling() {
+        let expectation = XCTestExpectation(description: "Combine subscription updates viewModel")
+        mockAuthManager.$isAuthenticated
+            .dropFirst()
+            .sink { isAuthenticated in
+                XCTAssertTrue(self.viewModel.isLoggedIn == isAuthenticated)
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        mockAuthManager.isAuthenticated.toggle()
+
+        wait(for: [expectation], timeout: 1.0)
+    }
+
+    func testFormDataClearedAfterSuccessfulLogin() async {
+        viewModel.username = "testUser"
+        viewModel.password = "testPassword"
+        mockAuthManager.shouldFailLogin = false
+
+        await viewModel.login()
+
+        XCTAssertTrue(viewModel.username.isEmpty && viewModel.password.isEmpty, "Form data should be cleared after successful login")
+    }
+
+    func testSensitiveDataNotRetainedAfterAuth() async {
+        viewModel.username = "testUser"
+        viewModel.password = "testPassword"
+
+        await viewModel.login()
+
+        XCTAssertTrue(viewModel.username.isEmpty && viewModel.password.isEmpty, "Sensitive data should not be retained after authentication attempt")
+    }
+
+    func testLogoutCallsAuthManagerLogout() async {
+        await viewModel.logout()
+
+        XCTAssertEqual(mockAuthManager.logoutCallCount, 1, "Logout should call AuthManager's logout")
+    }
+
+    func testLogoutClearsViewModelState() async {
+        mockAuthManager.isAuthenticated = true
+        await viewModel.logout()
+
+        XCTAssertFalse(viewModel.isLoggedIn, "ViewModel state should be cleared on logout")
+    }
+
+    func testAuthManagerStorageFailureHandling() async {
+        mockAuthManager.shouldFailLogin = true
+
+        await viewModel.login()
+
+        XCTAssertNil(mockAuthManager.currentUser, "No user should be stored on login failure")
+        XCTAssertFalse(mockAuthManager.isAuthenticated, "AuthManager should not be authenticated on storage failure")
+    }
+
+    func testCompleteAuthenticationFlow() async {
+        viewModel.username = "validUser"
+        viewModel.password = "validPassword"
+        mockAuthManager.shouldFailLogin = false
+
+        await viewModel.login()
+
+        XCTAssertTrue(mockAuthManager.isAuthenticated, "User should be authenticated")
+        await viewModel.logout()
+        XCTAssertFalse(mockAuthManager.isAuthenticated, "User should be logged out")
+    }
+
+    func testViewModelDeallocationCleanup() {
+        viewModel = nil
+
+        XCTAssertTrue(cancellables.isEmpty, "All Combine subscriptions should be cancelled on ViewModel deallocation")
+    }
+}
+```
+
+This suite of tests provides comprehensive coverage of the authentication flow, ensuring proper integration and functionality before the implementation is complete. Through the use of `MockAuthManager`, these tests isolate the `LoginViewModel` behavior and allow for the testing of various authentication states and edge cases without relying on an actual authentication server, adhering to the principles of Test-Driven Development (TDD).

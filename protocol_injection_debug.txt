@@ -1,0 +1,46 @@
+```swift
+// FILE: NetworkManagerProtocol.swift
+import Foundation
+
+protocol NetworkManagerProtocol {
+    func request<T: Codable>(
+        endpoint: APIEndpoint,
+        responseType: T.Type,
+        token: String?
+    ) async throws -> T
+}
+```
+
+```swift
+// FILE: NetworkManager.swift - ADD THIS EXTENSION
+extension NetworkManager: NetworkManagerProtocol {
+    // Protocol conformance (method already exists)
+}
+```
+
+```swift
+// FILE: LoginViewModel.swift - CHANGE THESE LINES
+private let networkManager: NetworkManagerProtocol  // Changed type
+
+init(networkManager: NetworkManagerProtocol) {      // Changed parameter
+    self.networkManager = networkManager
+}
+```
+
+```swift
+// FILE: MockNetworkManager.swift - ADD THIS CLASS DEFINITION OR UPDATE IF EXISTS
+class MockNetworkManager: NetworkManagerProtocol {
+    func request<T>(
+        endpoint: APIEndpoint,
+        responseType: T.Type,
+        token: String?
+    ) async throws -> T where T: Decodable, T: Encodable {
+        // Mock response logic
+    }
+}
+```
+
+```swift
+// FILE: LoginViewModelTests.swift - FIX THIS LINE
+viewModel = LoginViewModel(networkManager: mockNetworkManager)  // No casting needed!
+```

@@ -1,0 +1,88 @@
+```swift
+// FILE: LoginView.swift
+import SwiftUI
+
+struct LoginView: View {
+    @StateObject private var viewModel = LoginViewModel()
+
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(spacing: 32) {
+                    VStack(spacing: 16) {
+                        Image("twitter_logo") // Assuming an image asset named "twitter_logo" exists
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 60)
+                        Text("Login to Your Account")
+                            .font(.title2)
+                            .fontWeight(.semibold)
+                    }
+                    
+                    VStack(spacing: 20) {
+                        TextField("Username or Email", text: $viewModel.username)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .keyboardType(.emailAddress)
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.never)
+                            .disabled(viewModel.isLoading)
+
+                        SecureField("Password", text: $viewModel.password)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .disabled(viewModel.isLoading)
+                    }
+                    
+                    VStack(spacing: 16) {
+                        Button(action: {
+                            viewModel.login()
+                        }) {
+                            HStack {
+                                if viewModel.isLoading {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                        .scaleEffect(0.8)
+                                } else {
+                                    Text(viewModel.loginButtonTitle)
+                                        .fontWeight(.semibold)
+                                }
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(viewModel.canSubmit ? Color.blue : Color.gray)
+                            .foregroundColor(.white)
+                            .cornerRadius(8)
+                        }
+                        .disabled(!viewModel.canSubmit)
+
+                        Button("Create Account") {
+                            // Code to navigate to Create Account View
+                        }
+                        .foregroundColor(.blue)
+                    }
+                }
+                .padding(.horizontal, 24)
+            }
+            .navigationBarHidden(true)
+        }
+        .alert("Login Error", isPresented: $viewModel.showError) {
+            Button("OK") { viewModel.clearError() }
+        } message: {
+            Text(viewModel.errorMessage)
+        }
+        .fullScreenCover(isPresented: $viewModel.isLoggedIn) {
+            // Assuming MainView() is the view to navigate after login
+            MainView() // Replace MainView() with actual main app view
+        }
+    }
+}
+
+// Assuming MainView exists or replace it with the actual main view's name
+struct MainView: View {
+    var body: some View {
+        Text("Welcome to the Main App")
+    }
+}
+
+// Make sure the LoginViewModel conforms to ObservableObject and has all the needed @Published properties along with the login() function.
+```
+This code structure for `LoginView.swift` integrates the `LoginViewModel` using SwiftUI's MVVM architecture, binding UI components to the ViewModel's properties. It includes form bindings and activates UI changes in response to ViewModel state changes like loading, error messages, and transitions to an authenticated state upon successful login.

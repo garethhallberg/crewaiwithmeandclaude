@@ -1,0 +1,93 @@
+```swift
+import SwiftUI
+
+struct LoginView: View {
+    @State private var email: String = ""
+    @State private var password: String = ""
+    @State private var isLoading: Bool = false
+    @State private var displayErrorMessage: Bool = false
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                Spacer().frame(height: 20)
+                
+                Text("Twitter Clone")
+                    .font(.custom("Arial-BoldMT", size: 28))
+                    .foregroundColor(Color("007AFF"))
+                
+                TextField("Username or Email", text: $email)
+                    .font(.system(size: 18))
+                    .padding(.vertical, 12)
+                    .padding(.horizontal, 20)
+                    .background(Color("F2F2F7"))
+                    .cornerRadius(8)
+                    .keyboardType(.emailAddress)
+                    .disableAutocorrection(true)
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color("D1D1D6"), lineWidth: 1))
+                
+                SecureField("Password", text: $password)
+                    .font(.system(size: 18))
+                    .padding(.vertical, 12)
+                    .padding(.horizontal, 20)
+                    .background(Color("F2F2F7"))
+                    .cornerRadius(8)
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color("D1D1D6"), lineWidth: 1))
+                
+                Button(action: {
+                    self.loginAction()
+                }) {
+                    if isLoading {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    } else {
+                        Text("Login")
+                            .font(.system(size: 20, weight: .medium))
+                            .foregroundColor(.white)
+                            .frame(height: 50)
+                            .frame(maxWidth: .infinity)
+                            .background(email.isEmpty || password.isEmpty ? Color.gray : Color.blue)
+                            .cornerRadius(10)
+                    }
+                }
+                .disabled(email.isEmpty || password.isEmpty)
+                .opacity(email.isEmpty || password.isEmpty ? 0.6 : 1)
+                
+                Button("Create Account") {
+                    // Action for creating account
+                }
+                .foregroundColor(Color("007AFF"))
+                .font(.system(size: 18, weight: .regular))
+            }
+            .padding()
+        }
+        .alert(isPresented: $displayErrorMessage) {
+            Alert(title: Text("Error"), message: Text("Invalid username or password"), dismissButton: .default(Text("OK")))
+        }
+        .padding(.horizontal, 16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.white)
+        .edgesIgnoringSafeArea(.all)
+    }
+
+    private func loginAction() {
+        isLoading = true
+        // Simulate a network request
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            // Example logic to handle login verification
+            self.isLoading = false
+            if email.isEmpty || password.isEmpty {
+                self.displayErrorMessage = true
+            } else {
+                // Proceed with login success action
+            }
+        }
+    }
+}
+
+struct LoginView_Previews: PreviewProvider {
+    static var previews: some View {
+        LoginView()
+    }
+}
+```

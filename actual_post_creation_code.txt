@@ -1,0 +1,77 @@
+```swift
+// FILE: PostCreationViewModel.swift
+
+import Foundation
+import SwiftUI
+
+class PostCreationViewModel: ObservableObject {
+    @Published var postContent: String = ""
+    @Published var isLoading: Bool = false
+    @Published var showAlert: Bool = false
+    @Published var alertMessage: String = ""
+
+    func createPost() {
+        isLoading = true
+        // Simulate network call
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            self.isLoading = false
+            // This placeholder is where the networking logic would go.
+            // Upon success:
+            // self.postContent = ""
+            // self.showAlert = true
+            // self.alertMessage = "Post created successfully!"
+
+            // Upon failure:
+            // self.showAlert = true
+            // self.alertMessage = "Failed to create post."
+        }
+    }
+}
+
+```
+
+```swift  
+// FILE: PostCreationView.swift
+
+import SwiftUI
+
+struct PostCreationView: View {
+    @ObservedObject var viewModel = PostCreationViewModel()
+
+    var body: some View {
+        VStack {
+            TextEditor(text: $viewModel.postContent)
+                .padding()
+                .border(Color.gray, width: 1)
+                .cornerRadius(5)
+                .padding()
+
+            if viewModel.isLoading {
+                ProgressView()
+            } else {
+                Button(action: {
+                    viewModel.createPost()
+                }) {
+                    Text("Create Post")
+                        .foregroundColor(.white)
+                        .padding()
+                        .background(Color.blue)
+                        .cornerRadius(10)
+                }
+            }
+        }
+        .padding()
+        .alert(isPresented: $viewModel.showAlert) {
+            Alert(title: Text("Message"), message: Text(viewModel.alertMessage), dismissButton: .default(Text("OK")))
+        }
+        .navigationTitle("Create Post")
+    }
+}
+
+struct PostCreationView_Previews: PreviewProvider {
+    static var previews: some View {
+        PostCreationView()
+    }
+}
+
+```

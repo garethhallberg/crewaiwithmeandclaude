@@ -1,0 +1,47 @@
+```swift
+import SwiftUI
+
+struct RegistrationView: View {
+    @StateObject private var viewModel = RegistrationViewModel.createDefault()
+
+    var body: some View {
+        VStack {
+            TextField("Email", text: $viewModel.email)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .autocapitalization(.none)
+                .disableAutocorrection(true)
+            
+            SecureField("Password", text: $viewModel.password)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+            
+            SecureField("Confirm Password", text: $viewModel.confirmPassword)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+
+            if viewModel.isLoading {
+                ProgressView()
+            } else {
+                Button("Register") {
+                    Task {
+                       await viewModel.register()
+                    }
+                }
+                .disabled(!viewModel.canRegister)
+            }
+        }
+        .padding()
+        .alert(isPresented: $viewModel.showingAlert) {
+            Alert(title: Text("Registration Failed"), message: Text(viewModel.alertMessage), dismissButton: .default(Text("OK")))
+        }
+        .navigationTitle("Registration")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+struct RegistrationView_Previews: PreviewProvider {
+    static var previews: some View {
+        RegistrationView()
+    }
+}
+```
+
+This code transforms `RegistrationView` to use `RegistrationViewModel` following the MVVM pattern successfully demonstrated in `LoginView`. The ViewModel is connected using a `@StateObject`, ensuring the view reacts to updates in the ViewModel. Form fields are now bound to ViewModel properties using $ bindings, making the UI reactive to the ViewModel's state. Furthermore, registration actions are triggered through the ViewModel, and loading states and error alerts are implemented maintaining the user experience and the app's visual design consistent with the Login screen.

@@ -1,0 +1,99 @@
+```swift
+// FILE: LoginViewModelJWTIntegrationTests.swift
+import XCTest
+@testable import TwitterClone
+
+@MainActor
+final class LoginViewModelJWTIntegrationTests: XCTestCase {
+    var mockNetworkManager: MockNetworkManager!
+    var mockAuthManager: MockAuthManager!
+
+    override func setUp() {
+        super.setUp()
+        mockNetworkManager = MockNetworkManager()
+        mockAuthManager = MockAuthManager()
+    }
+
+    override func tearDown() {
+        mockNetworkManager = nil
+        mockAuthManager = nil
+        super.tearDown()
+    }
+
+    func testAuthManagerDependencyInjection() {
+        // Arrange
+
+        // Act & Assert
+        XCTAssertThrowsError(try LoginViewModel(networkManager: mockNetworkManager, authManager: mockAuthManager), "LoginViewModel initializer should accept an AuthManager parameter, but it doesn't.")
+    }
+
+    func testSuccessfulLoginCallsAuthManagerLogin() async {
+        // Arrange
+        let testUser = User(
+            id: UUID(),
+            username: "realtest",
+            email: "real@test.com",
+            displayName: "Real Test",
+            bio: nil,
+            isActive: true,
+            createdAt: Date()
+        )
+        let testResponse = AuthResponse(
+            token: "real-jwt-token",
+            tokenType: "Bearer",
+            expiresIn: 3600,
+            user: testUser
+        )
+
+        mockNetworkManager.shouldSucceed = true
+        mockNetworkManager.mockAuthResponse = testResponse
+
+        let viewModel = try! LoginViewModel(networkManager: mockNetworkManager, authManager: mockAuthManager)
+        viewModel.username = "realtest"
+        viewModel.password = "password123"
+
+        // Act
+        await viewModel.login()
+
+        // Assert
+        XCTAssertEqual(mockAuthManager.loginCallCount, 1, "AuthManager.login should be called once after successful login.")
+    }
+
+    func testFormDataClearedAfterLogin() async {
+        // Arrange
+        mockNetworkManager.shouldSucceed = true
+        let viewModel = try! LoginViewModel(networkManager: mockNetworkManager, authManager: mockAuthManager)
+        viewModel.username = "clearTest"
+        viewModel.password = "clear"
+
+        // Act
+        await viewModel.login()
+
+        // Assert
+        XCTAssertTrue(viewModel.username.isEmpty && viewModel.password.isEmpty, "Username and password should be cleared after successful login.")
+    }
+
+    func testLogoutCallsAuthManager() {
+        // Arrange
+        let viewModel = try! LoginViewModel(networkManager: mockNetworkManager, authManager: mockAuthManager)
+
+        // Act
+        viewModel.logout()
+
+        // Assert
+        XCTAssertEqual(mockAuthManager.logoutCallCount, 1, "logoutCallCount should be 1 after calling logout.")
+    }
+
+    func testAuthStateSync() {
+        // Arrange
+        mockAuthManager.isAuthenticated = true
+        let viewModel = try! LoginViewModel(networkManager: mockNetworkManager, authManager: mockAuthManager)
+
+        // Act
+        let isLoggedIn = viewModel.isLoggedIn
+
+        // Assert
+        XCTAssertEqual(isLoggedIn, mockAuthManager.isAuthenticated, "ViewModel isLoggedIn should reflect AuthManager isAuthenticated.")
+    }
+}
+```

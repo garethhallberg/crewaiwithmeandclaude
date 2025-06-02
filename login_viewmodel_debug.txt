@@ -1,0 +1,97 @@
+```swift
+// FILE: LoginViewModel.swift
+import Foundation
+import SwiftUI
+
+@MainActor
+class LoginViewModel: ObservableObject {
+    // Dependency for network communications, allowing for easy mocking and testing
+    private var networkManager: NetworkManagerProtocol
+
+    // MARK: - @Published properties for UI Binding
+    @Published var username: String = ""
+    @Published var password: String = ""
+    @Published var isLoading: Bool = false
+    @Published var errorMessage: String = ""
+    @Published var showError: Bool = false
+    @Published var isLoggedIn: Bool = false
+
+    // MARK: - Computed Properties for UI Updates and Logic
+    var isFormValid: Bool {
+        return !username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && password.count >= 8
+    }
+
+    var canSubmit: Bool {
+        return isFormValid && !isLoading
+    }
+
+    var loginButtonTitle: String {
+        isLoading ? "Logging In..." : "Login"
+    }
+
+    // MARK: - Initializer for Dependency Injection
+    init(networkManager: NetworkManagerProtocol) {
+        self.networkManager = networkManager
+    }
+
+    // MARK: - Business Logic for Login
+    func login() async {
+        guard canSubmit else { 
+            handleLoginError(message: "Form is invalid")
+            return
+        }
+        enterLoadingState()
+        do {
+            let success = try await networkManager.authenticate(username: username, password: password)
+            success ? handleLoginSuccess() : handleLoginError(message: "Invalid username or password")
+        } catch let error as NetworkError {
+            switch error {
+            case .authenticationFailed:
+                handleLoginError(message: "Failed to authenticate. Please check your credentials.")
+            case .badRequest, .notFound:
+                handleLoginError(message: "Something went wrong. Please try again later.")
+            default:
+                handleLoginError(message: "An unexpected error occurred")
+            }
+        } catch {
+            handleLoginError(message: "An unexpected error occurred")
+        }
+    }
+
+    // MARK: - Helpers and State Management
+    func reset() {
+        username = ""
+        password = ""
+        isLoading = false
+        errorMessage = ""
+        showError = false
+        isLoggedIn = false
+    }
+    
+    private func enterLoadingState() {
+        isLoading = true
+        clearError()
+    }
+
+    private func handleLoginSuccess() {
+        isLoggedIn = true
+        resetLoadingAndError()
+    }
+    
+    private func handleLoginError(message: String) {
+        errorMessage = message
+        showError = true
+        resetLoadingAndError()
+    }
+    
+    private func clearError() {
+        errorMessage = ""
+        showError = false
+    }
+    
+    private func resetLoadingAndError() {
+        isLoading = false
+    }
+}
+```
+This implementation of `LoginViewModel.swift` meets all the stated requirements by integrating the network layer with user interface concerns using the MVVM architecture. It communicates with a `NetworkManagerProtocol`, facilitating easy testing and swapping of network detail implementations. The ViewModel also manages user input validation, login state, asynchronous login operations, error handling with user-friendly messages, and UI state transitions based on both successful and failed login attempts. This setup ensures a clean separation of concerns, maintainable code, and a robust basis for further development and testing.
