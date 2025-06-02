@@ -1,0 +1,35 @@
+package com.twitterclone.common.test
+
+import com.twitterclone.user.dto.RegisterRequest
+import com.twitterclone.user.dto.LoginRequest
+import java.util.*
+
+/**
+ * Builder for creating consistent test data across integration tests
+ */
+object TestDataBuilder {
+    
+    fun createRegisterRequest(
+        username: String = "testuser_${UUID.randomUUID().toString().substring(0, 8)}",
+        email: String = "test_${UUID.randomUUID().toString().substring(0, 8)}@example.com",
+        password: String = "password123",
+        displayName: String = "Test User"
+    ): RegisterRequest {
+        return RegisterRequest(
+            username = username,
+            email = email,
+            password = password,
+            displayName = displayName
+        )
+    }
+    
+    fun createLoginRequest(
+        usernameOrEmail: String = "testuser",
+        password: String = "password123"
+    ): LoginRequest {
+        return LoginRequest(
+            usernameOrEmail = usernameOrEmail,
+            password = password
+        )
+    }
+}

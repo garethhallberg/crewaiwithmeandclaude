@@ -1,0 +1,22 @@
+package com.twitterclone.post.integration
+
+import com.twitterclone.post.PostServiceApplication
+import org.junit.jupiter.api.Test
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.test.context.ActiveProfiles
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase
+
+@SpringBootTest(
+    classes = [PostServiceApplication::class],
+    webEnvironment = SpringBootTest.WebEnvironment.NONE
+)
+@ActiveProfiles("test")
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+class SimpleContextTest {
+
+    @Test
+    fun `context should load successfully`() {
+        // This test just verifies that the Spring context can load
+        println("✅ Spring context loaded successfully!")
+    }
+}

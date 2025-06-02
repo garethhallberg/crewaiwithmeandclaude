@@ -1,0 +1,34 @@
+package com.twitterclone.post.dto
+
+import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.Size
+import java.time.LocalDateTime
+import java.util.*
+
+data class PostDto(
+    val id: UUID? = null,
+    val content: String,
+    val authorId: UUID,
+    val likeCount: Long = 0,
+    val commentCount: Long = 0,
+    val shareCount: Long = 0,
+    val parentPostId: UUID? = null,
+    val createdAt: LocalDateTime? = null,
+    val updatedAt: LocalDateTime? = null
+)
+
+data class CreatePostRequest(
+    @field:NotBlank(message = "Post content is required")
+    @field:Size(max = 280, message = "Post content cannot exceed 280 characters")
+    val content: String,
+    
+    val authorId: UUID,
+    val parentPostId: UUID? = null
+)
+
+data class PostLikeDto(
+    val id: UUID? = null,
+    val postId: UUID,
+    val userId: UUID,
+    val createdAt: LocalDateTime? = null
+)

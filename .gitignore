@@ -50,7 +50,6 @@ Thumbs.db
 uploads/
 logs/
 results/
-generated_code/
 temp/
 
 # Jupyter
